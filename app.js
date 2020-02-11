@@ -1,7 +1,10 @@
 const express = require("express")
+const cors = require("cors")
 var mysql = require('mysql');
 const app = express()
 
+
+const bddDuClochard = [["root","root"],["user","root"],["erwan","oklm"],["yan","18544"]]
 // a modifier en fonction de l'hebergeur
 var connection = mysql.createConnection({
     host     : 'localhost',
@@ -27,7 +30,7 @@ connection.connect(err => {
     }
 })
 
-app.get("/",(req,res)=>{
+app.get("/",cors(),(req,res)=>{
 
     var myQuery = "select secondName from User"
 
@@ -37,6 +40,7 @@ app.get("/",(req,res)=>{
         console.log("| BDD request |")
         console.log("+=============+")
         if(error===null){
+            console.log(myQuery)
             console.log("Requete a la bdd : Ok")
             res.json({results})
         }else{
@@ -46,18 +50,19 @@ app.get("/",(req,res)=>{
         }
     });
 })
-
-app.get("/oklm",(req,res)=>{
-    res.send("oue")
+app.put("/",cors(),(req,res)=>{
+    res.json(req.body)
+    // res.json({message:"oklm",ou:"bien"})
 })
 
+
 // 404 error
-app.use(function(req, res, next){
-    res.status(404)
-    res.json({
-            "Status":404,
-            "Description":'Page not found !'
-            })
+app.use(cors(),function(req, res, next){
+    // res.status(404)
+    // res.json({
+            // "Status":404,
+            // "Description":'Page not found !'
+            // })
 });
 
 // connection au port d'ecoute
