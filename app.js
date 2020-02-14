@@ -4,6 +4,14 @@ var mysql = require('mysql');
 const app = express()
 
 
+var corsOptions = {
+    "origin": "*",
+    "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+    "preflightContinue": false,
+    "optionsSuccessStatus": 204
+}
+
+
 const bddDuClochard = [["root","root"],["user","root"],["erwan","oklm"],["yan","18544"]]
 // a modifier en fonction de l'hebergeur
 var connection = mysql.createConnection({
@@ -30,7 +38,7 @@ connection.connect(err => {
     }
 })
 
-app.get("/",cors(),(req,res)=>{
+app.get("/",cors(corsOptions),(req,res)=>{
 
     var myQuery = "select secondName from User"
 
@@ -50,20 +58,32 @@ app.get("/",cors(),(req,res)=>{
         }
     });
 })
-app.put("/",cors(),(req,res)=>{
-    res.json(req.body)
-    // res.json({message:"oklm",ou:"bien"})
+
+// test connexion of the user
+app.get("/users/:userName/:passWord",cors(corsOptions),(req,res)=>{
+    const {userName, passWord} = req.params
+    // res.json({userName,passWord})
+    // res.json({bddDuClochard})
+    for (let i = 0; i < bddDuClochard.length; i++) {
+        if(bddDuClochard[i][0]===userName){
+            if(bddDuClochard[i][1]===passWord){
+                res.json({connexion:true})
+                return 0
+            }
+        }
+    }
+    res.json({connexion:false})
 })
 
 
 // 404 error
-app.use(cors(),function(req, res, next){
-    // res.status(404)
-    // res.json({
-            // "Status":404,
-            // "Description":'Page not found !'
-            // })
-});
+app.use(cors(corsOptions),function(req, res, next){
+    res.status(404)
+    res.json({
+        "Status":404,
+        "Description":'Page not found !'
+        })
+})
 
 // connection au port d'ecoute
 app.listen(8000,()=>{
