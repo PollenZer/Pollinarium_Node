@@ -1,8 +1,11 @@
 const express = require("express")
+const bodyParser = require('body-parser');
 const cors = require("cors")
 var mysql = require('mysql');
-const app = express()
 
+const app = express()
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 var corsOptions = {
     "origin": "*",
@@ -11,8 +14,6 @@ var corsOptions = {
     "optionsSuccessStatus": 204
 }
 
-
-const bddDuClochard = [["root","root"],["user","root"],["erwan","oklm"],["yan","18544"]]
 // a modifier en fonction de l'hebergeur
 var connection = mysql.createConnection({
     host     : 'localhost',
@@ -40,7 +41,7 @@ connection.connect(err => {
 
 app.get("/",cors(corsOptions),(req,res)=>{
 
-    var myQuery = "select secondName from User"
+    var myQuery = "select * from User"
 
     connection.query(myQuery, function (error, results, fields) {
         console.log("")
@@ -59,22 +60,78 @@ app.get("/",cors(corsOptions),(req,res)=>{
     });
 })
 
-// test connexion of the user
-app.get("/users/:userName/:passWord",cors(corsOptions),(req,res)=>{
-    const {userName, passWord} = req.params
-    // res.json({userName,passWord})
-    // res.json({bddDuClochard})
-    for (let i = 0; i < bddDuClochard.length; i++) {
-        if(bddDuClochard[i][0]===userName){
-            if(bddDuClochard[i][1]===passWord){
-                res.json({connexion:true})
-                return 0
+app.get("/users",cors(corsOptions),(req,res)=>{
+    const {user, pass} = req.query
+    var myQuery = "select userName,password from User"
+    connection.query(myQuery, function (error, results, fields) {
+        console.log("")
+        console.log("+=============+")
+        console.log("| BDD request |")
+        console.log("+=============+")
+        if(error===null){
+            console.log("Requete : \"" + myQuery+"\"")
+            console.log("Requete a la bdd : Ok")
+            for (let i = 0; i < results.length; i++) {
+                if(results[i].userName===user){
+                    if(results[i].password===pass){
+                        res.json({connexion:true})
+                        return 0
+                    }
+                }
             }
+            res.json({connexion:false})
+        }else{
+            console.log("Requete a la bdd : Failed")
+            console.log("Requete : \"" + myQuery+"\"")
+            console.log("Error displayed by the serv => " + error)
         }
-    }
-    res.json({connexion:false})
+    });
 })
 
+app.get("/checkUsers", cors(corsOptions),(req,res)=>{
+    const {userName, emailAdress, phoneNumber} = req.query
+    var showSql = "SELECT userName, emailAdress, phoneNumber FROM User"
+    var error=null
+    connection.query(showSql, function (err, result) {
+        for (let i = 0; i < result.length; i++) {
+            if(result[i].phoneNumber===phoneNumber){
+                error="phoneNumber"
+            }
+            if(result[i].emailAdress===emailAdress){
+                error="emailAdress"
+            }
+            if(result[i].userName===userName){
+                console.log("++++++++++++++++++");
+                error="userName"
+            }
+            console.log(userName + "/" + result[i].userName);
+        }
+        console.log("error = " + error);
+        res.json({inputError:error})
+    })
+})
+
+app.post("/users",cors(corsOptions),(req,res)=>{
+    const {
+        userName,
+        firstName,
+        secondName,
+        emailAdress,
+        password,
+        phoneNumber,
+        subscribe
+    } = req.body
+    console.log(req.body)
+    var error=""
+    var canAddInBdd = true
+    var insertSql = "INSERT INTO User (userName, firstName, secondName, emailAdress, password, phoneNumber, subscribe) VALUES (\""+userName+"\",\""+firstName+"\",\""+secondName+"\",\""+emailAdress+"\",\""+password+"\",\""+phoneNumber+"\","+subscribe +")"
+    console.log(insertSql)    
+        connection.query(insertSql, function (err, result) {
+            if (err) throw err;
+            res.json({action:"done"})
+        });
+        console.log("post sur /users")
+})
 
 // 404 error
 app.use(cors(corsOptions),function(req, res, next){
